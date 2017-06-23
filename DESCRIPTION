@@ -1,6 +1,6 @@
 Package: aoristAAR
 Type: Package
-Title: Aoristic Analysid of Archaeological Data
+Title: Aoristic Analysis of Archaeological Data
 Version: 0.1.0
 Author: c(
   person("Martin", "Hinz", email = "martin.hinz@ufg.uni-kiel.de", role = c("aut"))

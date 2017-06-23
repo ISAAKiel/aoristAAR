@@ -16,7 +16,7 @@
 
 aorist <- function(from, to, correct=F) {
 
-  dates <- cbind(from,to)
+  dates <- as.data.frame(cbind(from,to))
   unique_periodes <- unique(dates)
   unique_periodes$id <- 1:nrow(unique_periodes)
 

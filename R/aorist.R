@@ -53,4 +53,6 @@ aorist <- function(from, to, correct=F) {
   }
 
   final_ao_sum <- data.frame(date = n_periods$date, sum = ao_sum_collector)
+
+  return(final_ao_sum)
 }

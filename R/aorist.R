@@ -28,7 +28,7 @@ aorist <- function(from, to, correct=F) {
   n_periods <- data.frame(date = time_window[1]:time_window[2], sum=0)
 
   for (i in 1:nrow(unique_periodes)) {
-    this_index <- n_periods$date>=unique_periodes$from[i] & unique_periodes$date<=unique_periodes$to[i]
+    this_index <- n_periods$date>=unique_periodes$from[i] & n_periods$date<=unique_periodes$to[i]
     n_periods$sum[this_index] <- n_periods$sum[this_index] + 1
   }
 

@@ -17,7 +17,7 @@ aorist(from, to, correct = F)
 a vector containing the aoristic sum for the entered data
 }
 \description{
-Calculates an aoristic sum based on a start and end date
+Calculates an aoristic sum based on a start and end date. Dates BC(E) have to be given with negative sign.
 }
 \examples{
 

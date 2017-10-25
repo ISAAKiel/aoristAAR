@@ -1,6 +1,6 @@
 #' Calculates an aoristic sum based on a start and end date
 #'
-#' Calculates an aoristic sum based on a start and end date
+#' Calculates an aoristic sum based on a start and end date. Dates BC(E) have to be given with negative sign.
 #'
 #' @param from vector of start dates
 #' @param to vector of end dates

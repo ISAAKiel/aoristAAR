@@ -8,9 +8,36 @@
 #'
 #' @return a vector containing the aoristic sum for the entered data
 #'
-#' @examples
+#' @details According to Mischka (2004), Aoristic analysis 'is a method used in criminology to analyse crime incidents and determine probabilities for the contemporaneity of the incidents or, when applied to archaeology, for the contemporaneity of sites'.
 #'
-#' # to come
+#' The aoristic calculation distributes the probability of an event (the event has taken place at all = 1) to (time) sections of the total range within which the event may have taken place. The length of these periods can be arbitrarily chosen, for archaeological applications we set them at the annual level. This scaling can easily be brought to the desired scale by aggregation.
+#'
+#' The aoristic sum is then the expected value for the number of events to be assumed within this period. This can be, for example, the expected number of settlements that have been included in the calculation as individual data with start and end date as parameters.
+#'
+#' The calculation of the aoristic sum is based on exclusive time intervals in its original implementation (Radcliffe 2000). In archaeological applications, however, overlapping time intervals often result from different dating accuracy. For example, individual sites may only be categorized as part of the Neolithic, others may be narrowed down to the Middle Neolithic Ia. The structure of the overlapping time intervals can lead to biases of the aoristic sum (Hinz/Müller-Scheeßel forthcoming), which is corrected by the algorithm by weighting down multiple time periods.
+#'
+#' @references {
+#'
+#'   \insertRef{ratcliffe_aoristic_2000}{aoristAAR}
+#'
+#'   \insertRef{mischka_aoristische_2004}{aoristAAR}
+#'
+#'   \insertRef{hinz_systematic_nodate}{aoristAAR}
+#' }
+#'
+#' @examples
+#' my_settlements <- data.frame(from = c(-3800, -3750, -3500),
+#'                              to   = c(-3700, -3400, -3300))
+#'
+#' my_aoristic_sum <- aorist(from = my_settlements$from,
+#'                           to   = my_settlements$to)
+#'
+#' plot(my_aoristic_sum,
+#'      type="l",
+#'      xlim = c(-4100, -3200),
+#'      ylim = c(0,0.02))
+#'
+#' @importFrom Rdpack reprompt
 #'
 #' @export
 

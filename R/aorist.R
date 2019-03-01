@@ -1,18 +1,31 @@
-#' Calculates an aoristic sum based on a start and end date
+#' Calculates a time series based on a start and end date
 #'
-#' Calculates an aoristic sum based on a start and end date. Dates BC(E) have to be given with
-#' negative sign.
+#' Calculates a time series of unit-wise (p.e. year-wise) occurrence based on a start and end date.
+#' Dates BC(E) have to be given with negative sign.
 #'
-#' @param x s
-#' @param from s
-#' @param to s
-#' @param split_vars s
-#' @param stepwidth s
-#' @param method s
+#' @param x Data.frame.
+#' @param from Character or Integer. Names or indizes of "from" column (start date) in x.
+#' @param to Character or Integer. Names or indizes of "to" column (start date) in x.
+#' @param split_vars Character Vector or Integer Vector. Names or indizes of columns by which the
+#' x should be split before time series creation. Can be a vector of multiple values.
+#' @param stepwidth Integer. Width of each time step in the resulting time series. Default = 1.
+#' Can not be changed if method = "period_correction".
+#' @param method Character. Method switch to decide how the sum per timestep should be calculated.
+#' \itemize{
+#'   \item{"number": }{Number of elements within one timestep.}
+#'   \item{"weight": }{Sum of weighted occurences. Weighting considers the dating precision/length of periods.}
+#'   \item{"period_correction": }{More complex weighting method. See the section below.}
+#' }
 #'
-#' @return a vector containing the aoristic sum for the entered data
+#' @return Tibble (data.frame) with one row for each timestep and at least two columns:
+#' \itemize{
+#'   \item{date: }{Timestep.}
+#'   \item{sum: }{Calculated sum values per timestep.}
+#'   \item{... : }{Type variables if \code{split_vars} was set.}
+#' }
 #'
-#' @details According to Mischka (2004), Aoristic analysis 'is a method used in criminology to
+#' @section Aoristic period correction with method = "period_correction":
+#' According to Mischka (2004), Aoristic analysis 'is a method used in criminology to
 #' analyse crime incidents and determine probabilities for the contemporaneity of the incidents
 #' or, when applied to archaeology, for the contemporaneity of sites'.
 #'
@@ -35,7 +48,9 @@
 #'
 #' @references {
 #'   \insertRef{ratcliffe_aoristic_2000}{aoristAAR}
+#'
 #'   \insertRef{mischka_aoristische_2004}{aoristAAR}
+#'
 #'   \insertRef{hinz_systematic_nodate}{aoristAAR}
 #' }
 #'
@@ -56,17 +71,20 @@
 #' # normalisation methods
 #' method_weight_time_series <- aorist(my_settlements, method = "weight")
 #' method_period_correction_time_series <- aorist(my_settlements, method = "period_correction")
+#'
 #' plot(method_weight_time_series, type = "l", col = "blue", xlim = c(-4100, -3200))
 #' lines(method_period_correction_time_series, type = "l", col = "red", lty = 2)
 #' legend(-4100, 0.05, legend=c("weight", "period_correction"), col=c("blue", "red"), lty = 1:2, cex = 0.8)
 #'
 #' # splitting time series by additional variables
-#' splitted_time_series <- aorist(my_settlements, split_vars = c("type"), method = "weight")
+#' splitted_time_series <- aorist(my_settlements, split_vars = c("type"), method = "period_correction")
+#'
 #' coastel_settlements <- subset(splitted_time_series, splitted_time_series$type == "coastal settlement")[,c(1,2)]
-#' plot(coastel_settlements, type = "l", col = "darkgreen", xlim = c(-4100, -3200))
 #' hillforts <- subset(splitted_time_series, splitted_time_series$type == "hillfort")[,c(1,2)]
+#'
+#' plot(coastel_settlements, type = "l", col = "darkgreen", xlim = c(-4100, -3200))
 #' lines(method_period_correction_time_series, type = "l", col = "orange", lty = 2)
-#' legend(-4100, 0.04, legend=c("coastel s.", "hillforts"), col=c("darkgreen", "orange"), lty = 1, cex = 0.8)
+#' legend(-4100, 0.04, legend=c("coastel settlements", "hillforts"), col=c("darkgreen", "orange"), lty = 1, cex = 0.8)
 #'
 #' @importFrom Rdpack reprompt
 #'
@@ -141,7 +159,7 @@ seq2ts <- function(from, to, stepwidth = 1, method = "number") {
 
 #### methods ####
 
-# simple counting of occurences
+# simple counting of occurrence
 method_number <- function(from, to, stepwidth = 1) {
   input <- tibble::tibble(from, to)
   input$number_of_years <- abs(input$from - input$to)
@@ -223,7 +241,7 @@ method_period_correction <- function(from, to, stepwidth = 1) {
     ao_sum_collector<-ao_sum_collector+ao_weight[unique_periodes$id==dates$period_id[i]]
   }
 
-  final_ao_sum <- data.frame(date = n_periods$date, sum = ao_sum_collector)
+  final_ao_sum <- tibble::tibble(date = n_periods$date, sum = ao_sum_collector)
 
   return(final_ao_sum)
 }

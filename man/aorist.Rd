@@ -2,32 +2,45 @@
 % Please edit documentation in R/aorist.R
 \name{aorist}
 \alias{aorist}
-\title{Calculates an aoristic sum based on a start and end date}
+\title{Calculates a time series based on a start and end date}
 \usage{
 aorist(x, from = "from", to = "to", split_vars = c(),
   stepwidth = 1, method = "number")
 }
 \arguments{
-\item{x}{s}
+\item{x}{Data.frame.}
 
-\item{from}{s}
+\item{from}{Character or Integer. Names or indizes of "from" column (start date) in x.}
 
-\item{to}{s}
+\item{to}{Character or Integer. Names or indizes of "to" column (start date) in x.}
 
-\item{split_vars}{s}
+\item{split_vars}{Character Vector or Integer Vector. Names or indizes of columns by which the
+x should be split before time series creation. Can be a vector of multiple values.}
 
-\item{stepwidth}{s}
+\item{stepwidth}{Integer. Width of each time step in the resulting time series. Default = 1.
+Can not be changed if method = "period_correction".}
 
-\item{method}{s}
+\item{method}{Character. Method switch to decide how the sum per timestep should be calculated.
+\itemize{
+  \item{"number": }{Number of elements within one timestep.}
+  \item{"weight": }{Sum of weighted occurences. Weighting considers the dating precision/length of periods.}
+  \item{"period_correction": }{More complex weighting method. See the section below.}
+}}
 }
 \value{
-a vector containing the aoristic sum for the entered data
+Tibble (data.frame) with one row for each timestep and at least two columns:
+\itemize{
+  \item{date: }{Timestep.}
+  \item{sum: }{Calculated sum values per timestep.}
+  \item{... : }{Type variables if \code{split_vars} was set.}
+}
 }
 \description{
-Calculates an aoristic sum based on a start and end date. Dates BC(E) have to be given with
-negative sign.
+Calculates a time series of unit-wise (p.e. year-wise) occurrence based on a start and end date.
+Dates BC(E) have to be given with negative sign.
 }
-\details{
+\section{Aoristic period correction with method = "period_correction"}{
+
 According to Mischka (2004), Aoristic analysis 'is a method used in criminology to
 analyse crime incidents and determine probabilities for the contemporaneity of the incidents
 or, when applied to archaeology, for the contemporaneity of sites'.
@@ -49,6 +62,7 @@ The structure of the overlapping time intervals can lead to biases of the aorist
 (Hinz/Müller-Scheeßel forthcoming), which is corrected by the algorithm by weighting down
 multiple time periods.
 }
+
 \examples{
 # creating test data
 my_settlements <- data.frame(
@@ -66,23 +80,28 @@ plot(method_number_time_series, type = "l")
 # normalisation methods
 method_weight_time_series <- aorist(my_settlements, method = "weight")
 method_period_correction_time_series <- aorist(my_settlements, method = "period_correction")
+
 plot(method_weight_time_series, type = "l", col = "blue", xlim = c(-4100, -3200))
 lines(method_period_correction_time_series, type = "l", col = "red", lty = 2)
 legend(-4100, 0.05, legend=c("weight", "period_correction"), col=c("blue", "red"), lty = 1:2, cex = 0.8)
 
 # splitting time series by additional variables
-splitted_time_series <- aorist(my_settlements, split_vars = c("type"), method = "weight")
+splitted_time_series <- aorist(my_settlements, split_vars = c("type"), method = "period_correction")
+
 coastel_settlements <- subset(splitted_time_series, splitted_time_series$type == "coastal settlement")[,c(1,2)]
-plot(coastel_settlements, type = "l", col = "darkgreen", xlim = c(-4100, -3200))
 hillforts <- subset(splitted_time_series, splitted_time_series$type == "hillfort")[,c(1,2)]
+
+plot(coastel_settlements, type = "l", col = "darkgreen", xlim = c(-4100, -3200))
 lines(method_period_correction_time_series, type = "l", col = "orange", lty = 2)
-legend(-4100, 0.04, legend=c("coastel s.", "hillforts"), col=c("darkgreen", "orange"), lty = 1, cex = 0.8)
+legend(-4100, 0.04, legend=c("coastel settlements", "hillforts"), col=c("darkgreen", "orange"), lty = 1, cex = 0.8)
 
 }
 \references{
 {
   \insertRef{ratcliffe_aoristic_2000}{aoristAAR}
+
   \insertRef{mischka_aoristische_2004}{aoristAAR}
+
   \insertRef{hinz_systematic_nodate}{aoristAAR}
 }
 }

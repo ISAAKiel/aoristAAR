@@ -1,6 +1,6 @@
 #' Calculates a time series based on a start and end date
 #'
-#' Calculates a time series of unit-wise (p.e. year-wise) occurrence based on a start and end date.
+#' Calculates a time series of unit-wise (e.g. year-wise) occurrence based on a start and end date.
 #' Dates BC(E) have to be given with negative sign.
 #'
 #' @param x Data.frame.
@@ -74,17 +74,23 @@
 #'
 #' plot(method_weight_time_series, type = "l", col = "blue", xlim = c(-4100, -3200))
 #' lines(method_period_correction_time_series, type = "l", col = "red", lty = 2)
-#' legend(-4100, 0.05, legend=c("weight", "period_correction"), col=c("blue", "red"), lty = 1:2, cex = 0.8)
+#' legend(
+#'   -4100, 0.05, legend = c("weight", "period_correction"),
+#'   col = c("blue", "red"), lty = 1:2, cex = 0.8
+#' )
 #'
 #' # splitting time series by additional variables
 #' splitted_time_series <- aorist(my_settlements, split_vars = c("type"), method = "period_correction")
 #'
-#' coastel_settlements <- subset(splitted_time_series, splitted_time_series$type == "coastal settlement")[,c(1,2)]
-#' hillforts <- subset(splitted_time_series, splitted_time_series$type == "hillfort")[,c(1,2)]
+#' hamlets <- splitted_time_series[splitted_time_series$type == "coastal settlement", c(1,2)]
+#' hillforts <- splitted_time_series[splitted_time_series$type == "hillfort", c(1,2)]
 #'
-#' plot(coastel_settlements, type = "l", col = "darkgreen", xlim = c(-4100, -3200))
+#' plot(hamlets, type = "l", col = "darkgreen", xlim = c(-4100, -3200))
 #' lines(method_period_correction_time_series, type = "l", col = "orange", lty = 2)
-#' legend(-4100, 0.04, legend=c("coastel settlements", "hillforts"), col=c("darkgreen", "orange"), lty = 1, cex = 0.8)
+#' legend(
+#'   -4100, 0.04, legend = c("hamlets", "hillforts"),
+#'   col = c("darkgreen", "orange"), lty = 1, cex = 0.8
+#' )
 #'
 #' @importFrom Rdpack reprompt
 #'
@@ -199,7 +205,7 @@ method_weight <- function(from, to, stepwidth = 1) {
 }
 
 # weighting by period attribution
-method_period_correction <- function(from, to, stepwidth = 1) {
+method_period_correction <- function(from, to, stepwidth = 1, correct = T) {
 
   if (stepwidth != 1) {
     stop("Method 'perdiod_correction' only works with stepwidth = 1.")

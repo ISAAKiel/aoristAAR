@@ -3,7 +3,8 @@ Type: Package
 Title: Aoristic Analysis of Archaeological Data
 Version: 0.1.0
 Author: c(
-  person("Martin", "Hinz", email = "martin.hinz@ufg.uni-kiel.de", role = c("aut"))
+  person("Martin", "Hinz", email = "martin.hinz@ufg.uni-kiel.de", role = c("aut")),
+  person("Clemens", "Schmid", email = "clemens@nevrome.de", role = c("aut"))
   )
 Maintainer: Martin Hinz <martin.hinz@ufg.uni-kiel.de>
 Description: A collection of functions for the aoristic analysis of archaeological data.

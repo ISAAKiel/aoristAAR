@@ -12,7 +12,7 @@ aorist(x, from = "from", to = "to", split_vars = c(),
 
 \item{from}{Character or Integer. Names or indizes of "from" column (start date) in x.}
 
-\item{to}{Character or Integer. Names or indizes of "to" column (start date) in x.}
+\item{to}{Character or Integer. Names or indizes of "to" column (end date) in x.}
 
 \item{split_vars}{Character Vector or Integer Vector. Names or indizes of columns by which the
 x should be split before time series creation. Can be a vector of multiple values.}

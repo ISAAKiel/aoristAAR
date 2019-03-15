@@ -5,7 +5,8 @@
 \title{Calculates a time series based on a start and end date}
 \usage{
 aorist(x, from = "from", to = "to", split_vars = c(),
-  stepwidth = 1, method = "number")
+  stepwidth = 1, stepstart = min(x[[from]], na.rm = T),
+  stepstop = max(x[[to]], na.rm = T), method = "number")
 }
 \arguments{
 \item{x}{Data.frame.}
@@ -19,6 +20,10 @@ x should be split before time series creation. Can be a vector of multiple value
 
 \item{stepwidth}{Integer. Width of each time step in the resulting time series. Default = 1.
 Can not be changed if method = "period_correction".}
+
+\item{stepstart}{Integer. Start of the time window of interest. Default = \code{min(from, na.rm = T)}.}
+
+\item{stepstop}{Integer. End of the time window of interest. Default = \code{max(to, na.rm = T)}.}
 
 \item{method}{Character. Method switch to decide how the sum per timestep should be calculated.
 \itemize{

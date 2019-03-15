@@ -10,6 +10,9 @@
 #' x should be split before time series creation. Can be a vector of multiple values.
 #' @param stepwidth Integer. Width of each time step in the resulting time series. Default = 1.
 #' Can not be changed if method = "period_correction".
+#' @param stepstart Integer. Start of the time window of interest. Default = \code{min(from, na.rm = T)}.
+#' @param stepstop Integer. End of the time window of interest. Default = \code{max(to, na.rm = T)}.
+#'
 #' @param method Character. Method switch to decide how the sum per timestep should be calculated.
 #' \itemize{
 #'   \item{"number": }{Number of elements within one timestep.}
@@ -118,6 +121,8 @@ aorist <- function(
   to = "to",
   split_vars = c(),
   stepwidth = 1,
+  stepstart = min(x[[from]], na.rm = T),
+  stepstop = max(x[[to]], na.rm = T),
   method = "number"
 ) {
 
@@ -135,6 +140,8 @@ aorist <- function(
           nox[[from]],
           nox[[to]],
           stepwidth = stepwidth,
+          stepstart = stepstart,
+          stepstop = stepstop,
           method = method
         )
         for (i in split_vars) { timeseries[[i]] <- nox[[i]][1] }
@@ -153,10 +160,15 @@ aorist <- function(
       x[[from]],
       x[[to]],
       stepwidth = stepwidth,
+      stepstart = stepstart,
+      stepstop = stepstop,
       method = method
     )
 
   }
+
+  # replace NA values with 0: Non-occurrence equals zero
+  artefact_timeseries_df$sum[is.na(artefact_timeseries_df$sum)] <- 0
 
   return(artefact_timeseries_df)
 
@@ -164,7 +176,7 @@ aorist <- function(
 
 #### method switch ####
 
-seq2ts <- function(from, to, stepwidth = 1, method = "number") {
+seq2ts <- function(from, to, stepwidth, stepstart, stepstop, method = "number") {
 
   if (all(is.na(from)) | all(is.na(to))) {
     return(tibble::tibble(date = NA_real_, sum = NA_real_))
@@ -172,9 +184,18 @@ seq2ts <- function(from, to, stepwidth = 1, method = "number") {
 
   return(
     switch (method,
-      "number" = method_number(from, to, stepwidth = stepwidth),
-      "weight" = method_weight(from, to, stepwidth = stepwidth),
-      "period_correction" = method_period_correction(from, to, stepwidth = stepwidth)
+      "number" = method_number(
+        from, to,
+        stepwidth = stepwidth, stepstart = stepstart, stepstop = stepstop
+      ),
+      "weight" = method_weight(
+        from, to,
+        stepwidth = stepwidth, stepstart = stepstart, stepstop = stepstop
+      ),
+      "period_correction" = method_period_correction(
+        from, to,
+        stepwidth = stepwidth, stepstart = stepstart, stepstop = stepstop
+      )
     )
   )
 
@@ -183,12 +204,11 @@ seq2ts <- function(from, to, stepwidth = 1, method = "number") {
 #### methods ####
 
 # simple counting of occurrence
-method_number <- function(from, to, stepwidth = 1) {
-  input <- tibble::tibble(from, to)
-  input$number_of_years <- abs(input$from - input$to)
-  input$number_of_years <- ifelse(input$number_of_years == 0, 1, input$number_of_years)
+method_number <- function(from, to, stepwidth, stepstart, stepstop) {
 
-    output <- tibble::tibble(date = seq(min(from, na.rm = T), max(to, na.rm = T), by = stepwidth))
+  input <- tibble::tibble(from, to)
+
+  output <- tibble::tibble(date = seq(stepstart, stepstop, by = stepwidth))
   output$sum <- sapply(
     output$date,
     function(y, x) {
@@ -202,13 +222,13 @@ method_number <- function(from, to, stepwidth = 1) {
 }
 
 # weighting by dating precision
-method_weight <- function(from, to, stepwidth = 1) {
+method_weight <- function(from, to, stepwidth, stepstart, stepstop) {
   input <- tibble::tibble(from, to)
   input$number_of_years <- abs(input$from - input$to)
   input$number_of_years <- ifelse(input$number_of_years == 0, 1, input$number_of_years)
   input$weight_per_year = 1/input$number_of_years
 
-  output <- tibble::tibble(date = seq(min(from, na.rm = T), max(to, na.rm = T), by = stepwidth))
+  output <- tibble::tibble(date = seq(stepstart, stepstop, by = stepwidth))
   output$sum <- sapply(
     output$date,
     function(y, x) {
@@ -222,7 +242,7 @@ method_weight <- function(from, to, stepwidth = 1) {
 }
 
 # weighting by period attribution
-method_period_correction <- function(from, to, stepwidth = 1, correct = T) {
+method_period_correction <- function(from, to, stepwidth, stepstart, stepstop, correct = T) {
 
   if (stepwidth != 1) {
     stop("Method 'perdiod_correction' only works with stepwidth = 1.")
@@ -235,7 +255,7 @@ method_period_correction <- function(from, to, stepwidth = 1, correct = T) {
   dates$period_id <- apply(dates,1,function(x)
     unique_periodes$id[unique_periodes$from==x[1] & unique_periodes$to==x[2]])
 
-  time_window <- c(min(dates$from), max(dates$to))
+  time_window <- c(stepstart, stepstop)
 
   n_periods <- data.frame(date = time_window[1]:time_window[2], sum=0)
 

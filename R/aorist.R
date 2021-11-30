@@ -278,6 +278,8 @@ method_period_correction <- function(from, to, stepwidth, stepstart, stepstop, c
     ao_weight[i,]<-ao_weight[i,]/sum(ao_weight[i,])
   }
 
+  ao_weight[is.nan(ao_weight)] <- 0
+
   ao_sum_collector <- rep(0,nrow(n_periods))
 
   for (i in 1:nrow(dates)) {

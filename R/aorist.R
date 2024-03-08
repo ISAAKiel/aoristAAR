@@ -106,7 +106,7 @@
 #' hillforts <- splitted_time_series[splitted_time_series$type == "hillfort", c(1,2)]
 #'
 #' plot(hamlets, type = "l", col = "darkgreen", xlim = c(-4100, -3200))
-#' lines(method_period_correction_time_series, type = "l", col = "orange", lty = 2)
+#' lines(hillforts, type = "l", col = "darkblue", lty = 2)
 #' legend(
 #'   -4100, 0.04, legend = c("hamlets", "hillforts"),
 #'   col = c("darkgreen", "orange"), lty = 1, cex = 0.8

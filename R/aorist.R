@@ -125,8 +125,8 @@ aorist <- function(
   method = "number"
 ) {
 
-  stepstart = min(x[[from]], na.rm = T)
-  stepstop = max(x[[to]], na.rm = T)
+  stepstart <- min(x[[from]], na.rm = T)
+  stepstop <- max(x[[to]], na.rm = T)
 
   if (length(split_vars) > 0) {
 

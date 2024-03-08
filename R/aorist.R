@@ -44,7 +44,11 @@
 #' be categorized as part of the Neolithic, others may be narrowed down to the Middle Neolithic Ia.
 #' The structure of the overlapping time intervals can lead to biases of the aoristic sum
 #' (Hinz/Müller-Scheeßel forthcoming), which is corrected by the algorithm by weighting down
-#' multiple time periods.
+#' multiple time periods. If the 'period_correction' method has been selected
+#' the aoristic sum per time period, selected by stepwidth, is divided by
+#' the number of overlapping periods for this time period. This method is
+#' rather simplistic, but in many cases leads to a better estimate.
+#' A more elaborate version is under development.
 #'
 #' @references {
 #'   \insertRef{ratcliffe_aoristic_2000}{aoristAAR}

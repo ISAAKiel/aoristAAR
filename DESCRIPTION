@@ -17,3 +17,5 @@ Imports:
   pbapply (>= 1.3-4),
   tibble (>= 2.0.1)
 RdMacros: Rdpack
+URL: https://github.com/ISAAKiel/aoristAAR
+BugReports: https://github.com/ISAAKiel/aoristAAR/issues

@@ -247,7 +247,7 @@ method_weight <- function(from, to, stepwidth, stepstart, stepstop) {
 method_period_correction <- function(from, to, stepwidth, stepstart, stepstop, correct = T) {
 
   if (stepwidth != 1) {
-    stop("Method 'perdiod_correction' only works with stepwidth = 1.")
+    stop("Method 'period_correction' only works with stepwidth = 1.")
   }
 
   dates <- as.data.frame(cbind(from,to))

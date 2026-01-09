@@ -117,178 +117,89 @@
 #'
 #' @export
 aorist <- function(
-  x,
-  from = "from",
-  to = "to",
-  split_vars = c(),
-  stepwidth = 1,
-  method = "number"
+    x,
+    from = "from",
+    to = "to",
+    split_vars = character(),
+    stepwidth = 1,
+    method = "number"
 ) {
+  # --- basic validation ---
+  if (!is.data.frame(x)) stop("`x` must be a data.frame.", call. = FALSE)
+  if (!from %in% names(x)) stop("`from` column not found in `x`.", call. = FALSE)
+  if (!to %in% names(x)) stop("`to` column not found in `x`.", call. = FALSE)
+  if (!is.numeric(stepwidth) || length(stepwidth) != 1 || stepwidth <= 0) {
+    stop("`stepwidth` must be a single positive number.", call. = FALSE)
+  }
+  stepwidth <- as.integer(stepwidth)
 
-  stepstart = min(x[[from]], na.rm = T)
-  stepstop = max(x[[to]], na.rm = T)
+  allowed_methods <- c("number", "weight", "period_correction")
+  if (!method %in% allowed_methods) {
+    stop("Unknown `method`. Must be one of: ",
+         paste(allowed_methods, collapse = ", "), call. = FALSE)
+  }
 
   if (length(split_vars) > 0) {
+    missing_split <- setdiff(split_vars, names(x))
+    if (length(missing_split) > 0) {
+      stop("Unknown `split_vars` column(s): ",
+           paste(missing_split, collapse = ", "), call. = FALSE)
+    }
+  }
 
-    x_split <- base::split(x, lapply(split_vars, function(y) { x[[y]] }))
-    x_split_exist <- x_split[sapply(x_split, function(x) { nrow(x) > 0})]
-    x_list <- x_split_exist
+  # --- handle all-NA dates early ---
+  if (all(is.na(x[[from]])) || all(is.na(x[[to]]))) {
+    df <- tibble::tibble(date = NA_real_, sum = 0)
+    return(new_aorist_ts(
+      df,
+      method = method, stepwidth = stepwidth,
+      from = from, to = to, split_vars = split_vars,
+      stepstart = NA_real_, stepstop = NA_real_,
+      n_records = nrow(x),
+      call = match.call()
+    ))
+  }
 
-    artefact_timeseries <- pbapply::pblapply(
-      names(x_list),
-      function(nx, split_vars, stepwidth, method) {
-        nox <- x_list[[nx]]
-        timeseries <- seq2ts(
-          nox[[from]],
-          nox[[to]],
-          stepwidth = stepwidth,
-          stepstart = stepstart,
-          stepstop = stepstop,
-          method = method
-        )
-        for (i in split_vars) { timeseries[[i]] <- nox[[i]][1] }
-        return(timeseries)
-      },
-      split_vars = split_vars,
-      stepwidth = stepwidth,
-      method = method
-    )
+  stepstart <- min(x[[from]], na.rm = TRUE)
+  stepstop  <- max(x[[to]],   na.rm = TRUE)
 
-    artefact_timeseries_df <- do.call(rbind, artefact_timeseries)
-
-  } else {
-
-    artefact_timeseries_df <- seq2ts(
-      x[[from]],
-      x[[to]],
+  compute_one <- function(dat) {
+    ts <- seq2ts(
+      dat[[from]],
+      dat[[to]],
       stepwidth = stepwidth,
       stepstart = stepstart,
       stepstop = stepstop,
       method = method
     )
-
+    if (length(split_vars) > 0) {
+      for (v in split_vars) ts[[v]] <- dat[[v]][1]
+    }
+    ts
   }
 
-  # replace NA values with 0: Non-occurrence equals zero
+  if (length(split_vars) > 0) {
+    key <- interaction(x[split_vars], drop = TRUE, sep = " / ")
+    x_split <- split(x, key)
+    artefact_timeseries_df <- dplyr::bind_rows(lapply(x_split, compute_one))
+    # if you don't want dplyr as dependency, swap for:
+    # artefact_timeseries_df <- do.call(rbind, lapply(x_split, compute_one))
+  } else {
+    artefact_timeseries_df <- compute_one(x)
+  }
+
   artefact_timeseries_df$sum[is.na(artefact_timeseries_df$sum)] <- 0
 
-  return(artefact_timeseries_df)
-
-}
-
-#### method switch ####
-
-seq2ts <- function(from, to, stepwidth, stepstart, stepstop, method = "number") {
-
-  if (all(is.na(from)) | all(is.na(to))) {
-    return(tibble::tibble(date = NA_real_, sum = NA_real_))
-  }
-
-  return(
-    switch (method,
-      "number" = method_number(
-        from, to,
-        stepwidth = stepwidth, stepstart = stepstart, stepstop = stepstop
-      ),
-      "weight" = method_weight(
-        from, to,
-        stepwidth = stepwidth, stepstart = stepstart, stepstop = stepstop
-      ),
-      "period_correction" = method_period_correction(
-        from, to,
-        stepwidth = stepwidth, stepstart = stepstart, stepstop = stepstop
-      )
-    )
+  new_aorist_ts(
+    artefact_timeseries_df,
+    method = method,
+    stepwidth = stepwidth,
+    from = from,
+    to = to,
+    split_vars = split_vars,
+    stepstart = stepstart,
+    stepstop = stepstop,
+    n_records = nrow(x),
+    call = match.call()
   )
-
-}
-
-#### methods ####
-
-# simple counting of occurrence
-method_number <- function(from, to, stepwidth, stepstart, stepstop) {
-
-  input <- tibble::tibble(from, to)
-
-  output <- tibble::tibble(date = seq(stepstart, stepstop, by = stepwidth))
-  output$sum <- sapply(
-    output$date,
-    function(y, x) {
-      nrow(subset(x, x$from <= y & x$to >= y))
-    },
-    input
-  )
-  output$sum[output$sum == 0] <- NA_real_
-
-  return(output)
-}
-
-# weighting by dating precision
-method_weight <- function(from, to, stepwidth, stepstart, stepstop) {
-  input <- tibble::tibble(from, to)
-  input$number_of_years <- abs(input$from - input$to)
-  input$number_of_years <- ifelse(input$number_of_years == 0, 1, input$number_of_years)
-  input$weight_per_year = 1/input$number_of_years
-
-  output <- tibble::tibble(date = seq(stepstart, stepstop, by = stepwidth))
-  output$sum <- sapply(
-    output$date,
-    function(y, x) {
-      sum(subset(x, x$from <= y & x$to >= y)$weight_per_year)
-    },
-    input
-  )
-  output$sum[output$sum == 0] <- NA_real_
-
-  return(output)
-}
-
-# weighting by period attribution
-method_period_correction <- function(from, to, stepwidth, stepstart, stepstop, correct = T) {
-
-  if (stepwidth != 1) {
-    stop("Method 'perdiod_correction' only works with stepwidth = 1.")
-  }
-
-  dates <- as.data.frame(cbind(from,to))
-  unique_periodes <- unique(dates)
-  unique_periodes$id <- 1:nrow(unique_periodes)
-
-  dates$period_id <- apply(dates,1,function(x)
-    unique_periodes$id[unique_periodes$from==x[1] & unique_periodes$to==x[2]])
-
-  time_window <- c(stepstart, stepstop)
-
-  n_periods <- data.frame(date = time_window[1]:time_window[2], sum=0)
-
-  for (i in 1:nrow(unique_periodes)) {
-    this_index <- n_periods$date>=unique_periodes$from[i] & n_periods$date<=unique_periodes$to[i]
-    n_periods$sum[this_index] <- n_periods$sum[this_index] + 1
-  }
-
-  ao_weight <- matrix(nrow = nrow(unique_periodes), ncol=nrow(n_periods))
-
-  for (i in 1:nrow(unique_periodes)) {
-    this_period <- unique_periodes[i,]
-    ao_weight[i,]<-rep(0,nrow(n_periods))
-    within_period <- n_periods$date>=this_period$from & n_periods$date<=this_period$to
-    if (correct) {
-      ao_weight[i,within_period]<-1/n_periods$sum[within_period]
-    } else {
-      ao_weight[i,within_period]<-1
-    }
-    ao_weight[i,]<-ao_weight[i,]/sum(ao_weight[i,])
-  }
-
-  ao_weight[is.nan(ao_weight)] <- 0
-
-  ao_sum_collector <- rep(0,nrow(n_periods))
-
-  for (i in 1:nrow(dates)) {
-    ao_sum_collector<-ao_sum_collector+ao_weight[unique_periodes$id==dates$period_id[i]]
-  }
-
-  final_ao_sum <- tibble::tibble(date = n_periods$date, sum = ao_sum_collector)
-
-  return(final_ao_sum)
 }

@@ -11,9 +11,13 @@ Description: A collection of functions for the aoristic analysis of archaeologic
 License: GPL-3 | file LICENSE
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 6.1.1
+RoxygenNote: 7.3.3
 Imports: 
   Rdpack,
   pbapply (>= 1.3-4),
-  tibble (>= 2.0.1)
+  tibble (>= 2.0.1),
+  dplyr
 RdMacros: Rdpack
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3

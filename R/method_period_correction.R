@@ -1,79 +1,77 @@
 # weighting by period attribution
+#' @noRd
 method_period_correction <- function(from, to, stepwidth, stepstart, stepstop, correct = TRUE) {
 
   if (stepwidth != 1) {
     stop("Method 'period_correction' only works with stepwidth = 1.", call. = FALSE)
   }
 
-  # handle all-NA early (align with your seq2ts guard)
+  # align with seq2ts guard
   if (all(is.na(from)) || all(is.na(to))) {
     return(tibble::tibble(date = NA_real_, sum = NA_real_))
   }
 
-  # integer grid
-  start_int <- as.integer(stepstart)
-  stop_int  <- as.integer(stepstop)
-  years <- start_int:stop_int
-  Tn <- length(years)
+  grid <- make_year_grid(stepstart, stepstop)
+  years <- grid$years
+  n_grid <- grid$stop_int - grid$start_int + 1L
 
-  f <- as.integer(from)
-  t <- as.integer(to)
-  ok <- !(is.na(f) | is.na(t))
-  f <- f[ok]; t <- t[ok]
-  if (length(f) == 0) {
+  # Drop NA pairs, but do NOT clamp yet (unique periods should be based on original bounds)
+  iv0 <- clean_intervals(from, to, -Inf, Inf)
+  f0 <- iv0$f
+  t0 <- iv0$t
+
+  if (length(f0) == 0) {
     return(tibble::tibble(date = years, sum = NA_real_))
   }
 
-  # build unique periods and how often they occur (this replaces period_id logic)
-  periods <- data.frame(from = f, to = t)
-  # unique() keeps first occurrence; use match to map rows to unique periods
+  # Unique periods and how often they occur
+  periods <- data.frame(from = f0, to = t0)
   unique_periods <- unique(periods)
-  pid <- match(paste(periods$from, periods$to), paste(unique_periods$from, unique_periods$to))
-  counts <- tabulate(pid, nbins = nrow(unique_periods))  # frequency of each unique period
 
-  # clamp periods to the global window for indexing
-  uf <- pmax(as.integer(unique_periods$from), start_int)
-  ut <- pmin(as.integer(unique_periods$to),   stop_int)
+  # robust 2-col key mapping without paste()
+  pid <- match(
+    interaction(periods$from, periods$to, drop = TRUE),
+    interaction(unique_periods$from, unique_periods$to, drop = TRUE)
+  )
+  counts <- tabulate(pid, nbins = nrow(unique_periods))
 
-  # drop unique periods that do not overlap the window at all
+  # Clamp unique periods to window for indexing
+  uf <- pmax(as.integer(unique_periods$from), grid$start_int)
+  ut <- pmin(as.integer(unique_periods$to),   grid$stop_int)
+
   keep <- uf <= ut
   if (!all(keep)) {
-    unique_periods <- unique_periods[keep, , drop = FALSE]
-    uf <- uf[keep]; ut <- ut[keep]
+    uf <- uf[keep]
+    ut <- ut[keep]
     counts <- counts[keep]
   }
 
-  U <- nrow(unique_periods)
+  U <- length(uf)
   if (U == 0) {
     return(tibble::tibble(date = years, sum = NA_real_))
   }
 
-  # 1) compute n_periods[y] = number of unique periods covering year y
-  # using a difference array (O(U + T))
-  diff <- integer(Tn + 1L)
-  i_start <- uf - start_int + 1L
-  i_end   <- ut - start_int + 1L
-  diff[i_start] <- diff[i_start] + 1L
-  endp1 <- i_end + 1L
-  in_range <- endp1 <= length(diff)
-  diff[endp1[in_range]] <- diff[endp1[in_range]] - 1L
-  n_periods <- cumsum(diff)[seq_len(Tn)]  # length Tn
+  # Indices for unique periods
+  i_start <- uf - grid$start_int + 1L
+  i_end   <- ut - grid$start_int + 1L
 
-  # 2) accumulate final ao sum without creating ao_weight matrix
-  ao_sum <- numeric(Tn)
+  # 1) n_periods[y] = number of UNIQUE periods covering year y
+  n_periods <- diff_prefix_sum(
+    i_start = i_start,
+    i_end   = i_end,
+    values  = rep.int(1L, U),
+    n_grid  = n_grid
+  )
+
+  # 2) accumulate final ao sum without ao_weight matrix
+  ao_sum <- numeric(n_grid)
 
   for (i in seq_len(U)) {
     if (counts[i] == 0L) next
 
-    idx0 <- i_start[i]
-    idx1 <- i_end[i]
-    idx <- idx0:idx1
+    idx <- i_start[i]:i_end[i]
 
-    if (correct) {
-      base_w <- 1 / n_periods[idx]
-    } else {
-      base_w <- rep(1, length(idx))
-    }
+    base_w <- if (correct) (1 / n_periods[idx]) else rep.int(1, length(idx))
 
     denom <- sum(base_w)
     if (!is.finite(denom) || denom == 0) next

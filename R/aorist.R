@@ -116,79 +116,49 @@
 #' @importFrom Rdpack reprompt
 #'
 #' @export
-aorist <- function(
-    x,
-    from = "from",
-    to = "to",
-    split_vars = character(),
-    stepwidth = 1,
-    method = "number"
-) {
-  # --- basic validation ---
+aorist <- function(x,
+                   from = "from",
+                   to = "to",
+                   split_vars = character(),
+                   stepwidth = 1,
+                   method = "number") {
+
   if (!is.data.frame(x)) stop("`x` must be a data.frame.", call. = FALSE)
-  if (!from %in% names(x)) stop("`from` column not found in `x`.", call. = FALSE)
-  if (!to %in% names(x)) stop("`to` column not found in `x`.", call. = FALSE)
-  if (!is.numeric(stepwidth) || length(stepwidth) != 1 || stepwidth <= 0) {
-    stop("`stepwidth` must be a single positive number.", call. = FALSE)
-  }
-  stepwidth <- as.integer(stepwidth)
 
-  allowed_methods <- c("number", "weight", "period_correction")
-  if (!method %in% allowed_methods) {
-    stop("Unknown `method`. Must be one of: ",
-         paste(allowed_methods, collapse = ", "), call. = FALSE)
-  }
+  validate_columns(x, c(from, to))
+  if (length(split_vars) > 0) validate_columns(x, split_vars)
 
-  if (length(split_vars) > 0) {
-    missing_split <- setdiff(split_vars, names(x))
-    if (length(missing_split) > 0) {
-      stop("Unknown `split_vars` column(s): ",
-           paste(missing_split, collapse = ", "), call. = FALSE)
-    }
-  }
+  stepwidth <- validate_stepwidth(stepwidth)
+  method <- validate_method(method)
 
-  # --- handle all-NA dates early ---
+  # all-NA early return
   if (all(is.na(x[[from]])) || all(is.na(x[[to]]))) {
-    df <- tibble::tibble(date = NA_real_, sum = 0)
-    return(new_aorist_ts(
-      df,
+    return(empty_aorist_ts(
       method = method, stepwidth = stepwidth,
       from = from, to = to, split_vars = split_vars,
-      stepstart = NA_real_, stepstop = NA_real_,
       n_records = nrow(x),
       call = match.call()
     ))
   }
 
-  stepstart <- min(x[[from]], na.rm = TRUE)
-  stepstop  <- max(x[[to]],   na.rm = TRUE)
+  r <- compute_range(x, from, to)
+  stepstart <- r$stepstart
+  stepstop  <- r$stepstop
 
+  # wrapper that does NOT shadow the real helper name
   compute_one <- function(dat) {
-    ts <- seq2ts(
-      dat[[from]],
-      dat[[to]],
-      stepwidth = stepwidth,
-      stepstart = stepstart,
-      stepstop = stepstop,
-      method = method
-    )
-    if (length(split_vars) > 0) {
-      for (v in split_vars) ts[[v]] <- dat[[v]][1]
-    }
-    ts
+    compute_one_group(dat, from, to, stepwidth, stepstart, stepstop, method, split_vars)
   }
 
   if (length(split_vars) > 0) {
-    key <- interaction(x[split_vars], drop = TRUE, sep = " / ")
-    x_split <- split(x, key)
-    artefact_timeseries_df <- dplyr::bind_rows(lapply(x_split, compute_one))
-    # if you don't want dplyr as dependency, swap for:
-    # artefact_timeseries_df <- do.call(rbind, lapply(x_split, compute_one))
+    x_split <- split(x, x[split_vars], drop = TRUE)
+    artefact_timeseries_df <- do.call(rbind, lapply(x_split, compute_one))
+    artefact_timeseries_df <- tibble::as_tibble(artefact_timeseries_df)
   } else {
     artefact_timeseries_df <- compute_one(x)
   }
 
-  artefact_timeseries_df$sum[is.na(artefact_timeseries_df$sum)] <- 0
+  artefact_timeseries_df$sum <- na_to_zero(artefact_timeseries_df$sum)
 
   new_aorist_ts(
     artefact_timeseries_df,

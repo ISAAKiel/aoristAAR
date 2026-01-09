@@ -35,3 +35,39 @@ diff_prefix_sum <- function(i_start, i_end, values, n_grid) {
   diff[endp1[in_range]] <- diff[endp1[in_range]] - values[in_range]
   cumsum(diff)[seq_len(n_grid)]
 }
+
+#' @noRd
+sample_yearly_to_outdates <- function(yearly, out_dates, start_int) {
+  idx <- as.integer(out_dates) - start_int + 1L
+  as.numeric(yearly[idx])
+}
+
+#' @noRd
+interval_indices <- function(f, t, start_int) {
+  list(
+    i_start = f - start_int + 1L,
+    i_end   = t - start_int + 1L
+  )
+}
+
+#' @noRd
+clean_intervals_with_preweights <- function(from, to, start_int, stop_int) {
+  f0 <- as.integer(from)
+  t0 <- as.integer(to)
+  ok <- !(is.na(f0) | is.na(t0))
+  f0 <- f0[ok]; t0 <- t0[ok]
+  if (length(f0) == 0) return(list(f = integer(), t = integer(), w = numeric()))
+
+  n_years <- abs(f0 - t0)
+  n_years[n_years == 0L] <- 1L
+  w0 <- 1 / as.numeric(n_years)
+
+  f <- pmax(f0, start_int)
+  t <- pmin(t0, stop_int)
+  keep <- f <= t
+
+  list(f = f[keep], t = t[keep], w = w0[keep])
+}
+
+#' @noRd
+empty_ts <- function(out_dates) tibble::tibble(date = out_dates, sum = NA_real_)

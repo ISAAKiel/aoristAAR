@@ -1,6 +1,15 @@
 #' @noRd
 make_out_dates <- function(stepstart, stepstop, stepwidth) {
-  seq(stepstart, stepstop, by = stepwidth)
+  stepstart <- as.integer(stepstart)
+  stepstop  <- as.integer(stepstop)
+  stepwidth <- as.integer(stepwidth)
+
+  if (is.na(stepstart) || is.na(stepstop)) {
+    return(integer())
+  }
+
+  out <- seq(stepstart, stepstop, by = stepwidth)
+  out[out <= stepstop]  # defensive: never beyond true stop
 }
 
 #' @noRd

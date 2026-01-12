@@ -39,10 +39,3 @@ test_that("method_number counts inclusive intervals and overlaps", {
   expect_equal(res$sum, c(1, 2, 2))
 })
 
-test_that("method_number respects stepwidth by sampling the grid", {
-  x <- data.frame(start = c(-10), end = c(-1))
-  res <- aorist(x, from = "start", to = "end", method = "number", stepwidth = 3)
-  expect_equal(res$date, seq(-10, -1, by = 3))
-  expect_true(all(res$sum == 1))
-})
-

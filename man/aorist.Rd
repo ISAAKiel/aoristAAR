@@ -10,7 +10,11 @@ aorist(
   to = "to",
   split_vars = character(),
   stepwidth = 1,
-  method = "number"
+  method = "number",
+  interval = "[]",
+  calendar = "astronomical",
+  align_to = NULL,
+  aggregate = FALSE
 )
 }
 \arguments{

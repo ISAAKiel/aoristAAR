@@ -121,15 +121,28 @@ aorist <- function(x,
                    to = "to",
                    split_vars = character(),
                    stepwidth = 1,
-                   method = "number") {
+                   method = "number",
+                   interval = "[]",
+                   calendar = "astronomical",
+                   align_to = NULL,
+                   aggregate = FALSE) {
 
   if (!is.data.frame(x)) stop("`x` must be a data.frame.", call. = FALSE)
 
   validate_columns(x, c(from, to))
   if (length(split_vars) > 0) validate_columns(x, split_vars)
 
+  # Keep these validations, but ONLY use align_to later if we actually bin.
   stepwidth <- validate_stepwidth(stepwidth)
-  method <- validate_method(method)
+  method    <- validate_method(method)
+  interval  <- validate_interval(interval)
+  calendar  <- validate_calendar(calendar)
+
+  # Important: preserve "missing align_to" as NULL (no alignment requested)
+  align_to_arg <- if (missing(align_to)) NULL else align_to
+  if (!is.null(align_to_arg)) align_to_arg <- validate_align_to(align_to_arg)
+
+  validate_calendar_year0(x[[from]], x[[to]], calendar)
 
   # all-NA early return
   if (all(is.na(x[[from]])) || all(is.na(x[[to]]))) {
@@ -141,13 +154,23 @@ aorist <- function(x,
     ))
   }
 
+  # YEARLY range (independent of binning)
   r <- compute_range(x, from, to)
   stepstart <- r$stepstart
   stepstop  <- r$stepstop
 
-  # wrapper that does NOT shadow the real helper name
+  # --- 1) Compute YEARLY series only (no binning here) ---
   compute_one <- function(dat) {
-    compute_one_group(dat, from, to, stepwidth, stepstart, stepstop, method, split_vars)
+    compute_one_group(
+      dat, from, to,
+      stepwidth = stepwidth,
+      stepstart = stepstart,
+      stepstop  = stepstop,
+      method    = method,
+      split_vars = split_vars,
+      interval  = interval,
+      calendar  = calendar
+    )
   }
 
   if (length(split_vars) > 0) {
@@ -158,7 +181,40 @@ aorist <- function(x,
     artefact_timeseries_df <- compute_one(x)
   }
 
+  # treat NA sums as zero (contract expects no NA in sum)
   artefact_timeseries_df$sum <- na_to_zero(artefact_timeseries_df$sum)
+
+  # --- 2) Optional binning/regridding happens ONLY here ---
+  needs_binning <- !(stepwidth == 1 && is.null(align_to_arg) && !isTRUE(aggregate))
+
+  if (needs_binning) {
+
+    bin_one_ts <- function(ts) {
+      # ts is yearly with columns date,sum
+      b <- bin_ts_from_yearly(
+        yearly    = ts,
+        stepwidth = stepwidth,
+        align_to  = align_to_arg,
+        aggregate = isTRUE(aggregate)
+      )
+      b$sum <- na_to_zero(b$sum)
+      b
+    }
+
+    if (length(split_vars) > 0) {
+      # split the *yearly time series output* by split_vars, bin each, then reattach keys
+      out <- split(artefact_timeseries_df, artefact_timeseries_df[split_vars], drop = TRUE)
+      out <- lapply(out, function(ts) {
+        keys <- ts[1, split_vars, drop = FALSE]
+        b <- bin_one_ts(ts[, c("date", "sum")])
+        for (v in split_vars) b[[v]] <- keys[[v]]
+        b
+      })
+      artefact_timeseries_df <- tibble::as_tibble(do.call(rbind, out))
+    } else {
+      artefact_timeseries_df <- bin_one_ts(artefact_timeseries_df)
+    }
+  }
 
   new_aorist_ts(
     artefact_timeseries_df,

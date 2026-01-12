@@ -1,7 +1,5 @@
-# simple counting of occurrence
 #' @noRd
-method_number <- function(from, to, stepwidth, stepstart, stepstop) {
-
+method_number <- function(from, to, stepwidth, stepstart, stepstop, interval = "[]") {
   out_dates <- make_out_dates(stepstart, stepstop, stepwidth)
   grid <- make_year_grid(stepstart, stepstop)
 
@@ -9,9 +7,11 @@ method_number <- function(from, to, stepwidth, stepstart, stepstop) {
   f <- iv$f
   t <- iv$t
 
-  if (length(f) == 0) {
-    return(empty_ts(out_dates))
-  }
+  clo <- apply_interval_closure(f, t, interval = interval)
+  f <- clo$f
+  t <- clo$t
+
+  if (length(f) == 0) return(empty_ts(out_dates))
 
   n_grid <- grid$stop_int - grid$start_int + 1L
   ii <- interval_indices(f, t, grid$start_int)
@@ -29,10 +29,8 @@ method_number <- function(from, to, stepwidth, stepstart, stepstop) {
   tibble::tibble(date = out_dates, sum = out_sum)
 }
 
-# weighting by dating precision
 #' @noRd
-method_weight <- function(from, to, stepwidth, stepstart, stepstop) {
-
+method_weight <- function(from, to, stepwidth, stepstart, stepstop, interval = "[]") {
   out_dates <- make_out_dates(stepstart, stepstop, stepwidth)
   grid <- make_year_grid(stepstart, stepstop)
 
@@ -41,9 +39,12 @@ method_weight <- function(from, to, stepwidth, stepstart, stepstop) {
   t <- iv$t
   w <- iv$w
 
-  if (length(f) == 0) {
-    return(empty_ts(out_dates))
-  }
+  clo <- apply_interval_closure(f, t, interval = interval)
+  f <- clo$f
+  t <- clo$t
+  if (!is.null(clo$keep)) w <- w[clo$keep]
+
+  if (length(f) == 0) return(empty_ts(out_dates))
 
   n_grid <- grid$stop_int - grid$start_int + 1L
   ii <- interval_indices(f, t, grid$start_int)

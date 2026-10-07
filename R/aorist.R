@@ -226,8 +226,7 @@ method_number <- function(from, to, stepwidth, stepstart, stepstop) {
 # weighting by dating precision
 method_weight <- function(from, to, stepwidth, stepstart, stepstop) {
   input <- tibble::tibble(from, to)
-  input$number_of_years <- abs(input$from - input$to)
-  input$number_of_years <- ifelse(input$number_of_years == 0, 1, input$number_of_years)
+  input$number_of_years <- abs(input$from - input$to) + 1
   input$weight_per_year = 1/input$number_of_years
 
   output <- tibble::tibble(date = seq(stepstart, stepstop, by = stepwidth))
@@ -285,7 +284,7 @@ method_period_correction <- function(from, to, stepwidth, stepstart, stepstop, c
   ao_sum_collector <- rep(0,nrow(n_periods))
 
   for (i in 1:nrow(dates)) {
-    ao_sum_collector<-ao_sum_collector+ao_weight[unique_periodes$id==dates$period_id[i]]
+    ao_sum_collector <- ao_sum_collector + ao_weight[dates$period_id[i], ]
   }
 
   final_ao_sum <- tibble::tibble(date = n_periods$date, sum = ao_sum_collector)

@@ -4,7 +4,10 @@ Title: Aoristic Analysis of Archaeological Data
 Version: 0.1.1
 Authors@R: c(
     person("Martin", "Hinz", email = "martin.hinz@ufg.uni-kiel.de", role = c("aut", "cre")),
-    person("Clemens", "Schmid", email = "clemens@nevrome.de", role = c("aut"))
+    person("Nils", "Müller-Scheeßel", email = "nils.mueller-scheessel@ufg.uni-kiel.de", role = c("aut")),
+    person("Clemens", "Schmid", email = "clemens@nevrome.de", role = c("aut")),
+    person("Christoph", "Rinne", email = "crinne@ufg.uni-kiel.de", role = c("ctb")),
+    person("Hendrik", "Raese", email = "h.raese@roots.uni-kiel.de", role = c("ctb"))
   )
 Description: A collection of functions for the aoristic analysis of archaeological data.
 License: GPL-3 | file LICENSE

@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using these metadata."
+type: software
+title: "aoristAAR: Aoristic Analysis of Archaeological Data"
+abstract: "A collection of functions for the aoristic analysis of archaeological data."
+version: 0.1.1
+date-released: 2026-10-08
+license: GPL-3.0-only
+repository-code: "https://github.com/ISAAKiel/aoristAAR"
+url: "https://github.com/ISAAKiel/aoristAAR"
+authors:
+  - family-names: Hinz
+    given-names: Martin
+    email: martin.hinz@ufg.uni-kiel.de
+    orcid: "https://orcid.org/0000-0002-9904-6548"
+  - family-names: Müller-Scheeßel
+    given-names: Nils
+    email: nils.mueller-scheessel@ufg.uni-kiel.de
+    orcid: "https://orcid.org/0000-0001-7992-8722"
+  - family-names: Schmid
+    given-names: Clemens
+    email: clemens@nevrome.de
+    orcid: "https://orcid.org/0000-0003-3448-5715"
+keywords:
+  - archaeology
+  - aoristic analysis
+  - chronology
+  - R

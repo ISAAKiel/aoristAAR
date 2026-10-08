@@ -4,41 +4,40 @@
 \alias{aorist}
 \title{Calculates a time series based on a start and end date}
 \usage{
-aorist(x, from = "from", to = "to", split_vars = c(),
-  stepwidth = 1, stepstart = min(x[[from]], na.rm = T),
-  stepstop = max(x[[to]], na.rm = T), method = "number")
+aorist(
+  x,
+  from = "from",
+  to = "to",
+  split_vars = c(),
+  stepwidth = 1,
+  method = "number"
+)
 }
 \arguments{
 \item{x}{Data.frame.}
 
-\item{from}{Character or Integer. Names or indizes of "from" column (start date) in x.}
+\item{from}{Character or Integer. Names or indices of "from" column (start date) in x.}
 
-\item{to}{Character or Integer. Names or indizes of "to" column (end date) in x.}
+\item{to}{Character or Integer. Names or indices of "to" column (end date) in x.}
 
-\item{split_vars}{Character Vector or Integer Vector. Names or indizes of columns by which the
+\item{split_vars}{Character Vector or Integer Vector. Names or indices of columns by which the
 x should be split before time series creation. Can be a vector of multiple values.}
 
 \item{stepwidth}{Integer. Width of each time step in the resulting time series. Default = 1.
 Can not be changed if method = "period_correction".}
 
-\item{stepstart}{Integer. Start of the time window of interest. Default = \code{min(from, na.rm = T)}.}
-
-\item{stepstop}{Integer. End of the time window of interest. Default = \code{max(to, na.rm = T)}.}
-
 \item{method}{Character. Method switch to decide how the sum per timestep should be calculated.
-\itemize{
-  \item{"number": }{Number of elements within one timestep.}
-  \item{"weight": }{Sum of weighted occurences. Weighting considers the dating precision/length of periods.}
-  \item{"period_correction": }{More complex weighting method. See the section below.}
+\describe{
+  \item{\code{"number"}}{Number of elements within one timestep.}
+  \item{\code{"weight"}}{Sum of weighted occurences. Weighting considers the dating precision/length of periods.}
+  \item{\code{"period_correction"}}{More complex weighting method. See the section below.}
 }}
 }
 \value{
 Tibble (data.frame) with one row for each timestep and at least two columns:
-\itemize{
-  \item{date: }{Timestep.}
-  \item{sum: }{Calculated sum values per timestep.}
-  \item{... : }{Type variables if \code{split_vars} was set.}
-}
+\item{date}{Timestep.}
+\item{sum}{Calculated sum values per timestep.}
+\item{...}{Type variables if \code{split_vars} was set.}
 }
 \description{
 Calculates a time series of unit-wise (e.g. year-wise) occurrence based on a start and end date.
@@ -65,7 +64,11 @@ intervals often result from different dating accuracy. For example, individual s
 be categorized as part of the Neolithic, others may be narrowed down to the Middle Neolithic Ia.
 The structure of the overlapping time intervals can lead to biases of the aoristic sum
 (Hinz/Müller-Scheeßel forthcoming), which is corrected by the algorithm by weighting down
-multiple time periods.
+multiple time periods. If the 'period_correction' method has been selected
+the aoristic sum per time period, selected by stepwidth, is divided by
+the number of overlapping periods for this time period. This method is
+rather simplistic, but in many cases leads to a better estimate.
+A more elaborate version is under development.
 }
 
 \examples{
@@ -117,7 +120,7 @@ hamlets <- splitted_time_series[splitted_time_series$type == "coastal settlement
 hillforts <- splitted_time_series[splitted_time_series$type == "hillfort", c(1,2)]
 
 plot(hamlets, type = "l", col = "darkgreen", xlim = c(-4100, -3200))
-lines(method_period_correction_time_series, type = "l", col = "orange", lty = 2)
+lines(hillforts, type = "l", col = "darkblue", lty = 2)
 legend(
   -4100, 0.04, legend = c("hamlets", "hillforts"),
   col = c("darkgreen", "orange"), lty = 1, cex = 0.8

@@ -11,18 +11,16 @@
 #' @param stepwidth Integer. Width of each time step in the resulting time series. Default = 1.
 #' Can not be changed if method = "period_correction".
 #' @param method Character. Method switch to decide how the sum per timestep should be calculated.
-#' \itemize{
-#'   \item{"number": }{Number of elements within one timestep.}
-#'   \item{"weight": }{Sum of weighted occurences. Weighting considers the dating precision/length of periods.}
-#'   \item{"period_correction": }{More complex weighting method. See the section below.}
+#' \describe{
+#'   \item{\code{"number"}}{Number of elements within one timestep.}
+#'   \item{\code{"weight"}}{Sum of weighted occurences. Weighting considers the dating precision/length of periods.}
+#'   \item{\code{"period_correction"}}{More complex weighting method. See the section below.}
 #' }
 #'
 #' @return Tibble (data.frame) with one row for each timestep and at least two columns:
-#' \itemize{
-#'   \item{date: }{Timestep.}
-#'   \item{sum: }{Calculated sum values per timestep.}
-#'   \item{... : }{Type variables if \code{split_vars} was set.}
-#' }
+#' \item{date}{Timestep.}
+#' \item{sum}{Calculated sum values per timestep.}
+#' \item{...}{Type variables if \code{split_vars} was set.}
 #'
 #' @section Aoristic period correction with method = "period_correction":
 #' According to Mischka (2004), Aoristic analysis 'is a method used in criminology to

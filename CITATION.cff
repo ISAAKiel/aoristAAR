@@ -5,6 +5,7 @@ title: "aoristAAR: Aoristic Analysis of Archaeological Data"
 abstract: "A collection of functions for the aoristic analysis of archaeological data."
 version: 0.1.1
 date-released: 2026-10-08
+doi: 10.5281/zenodo.23239192
 license: GPL-3.0-only
 repository-code: "https://github.com/ISAAKiel/aoristAAR"
 url: "https://github.com/ISAAKiel/aoristAAR"
